@@ -6,7 +6,12 @@
   <title>3D Modeler</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #1a1a2e; color: #e0e0e0; overflow: hidden; height: 100dvh; height: 100vh; display: flex; flex-direction: column; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #1a1a2e; color: #e0e0e0;
+      display: flex; flex-direction: column;
+    }
 
     #top-bar {
       display: flex; align-items: center; gap: 6px; padding: 6px 10px;
@@ -20,36 +25,12 @@
     }
     .add-btn:hover, .add-btn:active { background: #e94560; border-color: #e94560; }
 
-    #main { display: flex; flex: 1; overflow: hidden; position: relative; }
-
-    #viewport { flex: 1; position: relative; min-width: 0; }
-    #viewport canvas { display: block; width: 100% !important; height: 100% !important; }
-
-    #toolbar {
-      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 3px; background: #16213e; padding: 3px; border-radius: 6px;
-      border: 1px solid #0f3460; z-index: 5;
-    }
-    .tool-btn {
-      padding: 5px 10px; background: transparent; border: none; color: #e0e0e0;
-      border-radius: 3px; cursor: pointer; font-size: 12px; touch-action: manipulation;
-    }
-    .tool-btn:hover { background: #0f3460; }
-    .tool-btn.active { background: #e94560; }
-
-    #space-btn {
-      position: absolute; top: 10px; right: 10px;
-      padding: 5px 10px; background: #16213e; border: 1px solid #0f3460;
-      color: #e0e0e0; border-radius: 4px; cursor: pointer; font-size: 12px; z-index: 5;
-      touch-action: manipulation;
-    }
-    #space-btn:hover { background: #0f3460; }
-    #space-btn.local { background: #e94560; border-color: #e94560; }
+    #main { display: flex; flex: 1; overflow: hidden; position: relative; min-height: 0; }
 
     #sidebar {
-      width: 220px; min-width: 220px; background: #16213e; padding: 10px;
+      width: 220px; flex-shrink: 0; background: #16213e; padding: 10px;
       display: flex; flex-direction: column; gap: 8px; overflow-y: auto;
-      border-left: 1px solid #0f3460;
+      border-left: 1px solid #0f3460; order: -1;
     }
     #sidebar h2 { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
@@ -77,7 +58,29 @@
 
     #no-selection { color: #555; font-size: 12px; text-align: center; padding: 16px 0; }
 
-    /* Mobile: sidebar as bottom panel */
+    #viewport { flex: 1; position: relative; min-width: 0; min-height: 0; }
+
+    #toolbar {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 3px; background: #16213e; padding: 3px; border-radius: 6px;
+      border: 1px solid #0f3460; z-index: 5;
+    }
+    .tool-btn {
+      padding: 5px 10px; background: transparent; border: none; color: #e0e0e0;
+      border-radius: 3px; cursor: pointer; font-size: 12px; touch-action: manipulation;
+    }
+    .tool-btn:hover { background: #0f3460; }
+    .tool-btn.active { background: #e94560; }
+
+    #space-btn {
+      position: absolute; top: 10px; right: 10px;
+      padding: 5px 10px; background: #16213e; border: 1px solid #0f3460;
+      color: #e0e0e0; border-radius: 4px; cursor: pointer; font-size: 12px; z-index: 5;
+      touch-action: manipulation;
+    }
+    #space-btn:hover { background: #0f3460; }
+    #space-btn.local { background: #e94560; border-color: #e94560; }
+
     #sidebar-toggle {
       display: none; position: absolute; bottom: 10px; right: 10px; z-index: 20;
       padding: 8px 12px; background: #e94560; border: none; color: #fff;
@@ -85,11 +88,10 @@
     }
 
     @media (max-width: 700px) {
-      body { flex-direction: column; }
-      #main { flex-direction: column-reverse; }
       #sidebar {
-        width: 100%; min-width: 0; max-height: 40dvh; border-left: none;
-        border-top: 1px solid #0f3460; display: none;
+        position: absolute; bottom: 0; left: 0; right: 0;
+        width: 100%; max-height: 45vh; border-left: none;
+        border-top: 1px solid #0f3460; display: none; z-index: 15;
       }
       #sidebar.open { display: flex; }
       #sidebar-toggle { display: block; }
@@ -118,10 +120,11 @@
   </div>
 
   <div id="main">
+    <div id="viewport"></div>
+
     <div id="sidebar">
       <h2>Scene Objects</h2>
       <div id="object-list"></div>
-
       <h2>Properties</h2>
       <div id="props-panel">
         <div id="no-selection">Tap an object to edit</div>
@@ -129,15 +132,13 @@
       </div>
     </div>
 
-    <div id="viewport">
-      <div id="toolbar">
-        <button class="tool-btn active" data-mode="translate" title="Move">Move</button>
-        <button class="tool-btn" data-mode="rotate" title="Rotate">Rotate</button>
-        <button class="tool-btn" data-mode="scale" title="Scale">Scale</button>
-      </div>
-      <button id="space-btn">World</button>
-      <button id="sidebar-toggle">Objects</button>
+    <div id="toolbar">
+      <button class="tool-btn active" data-mode="translate">Move</button>
+      <button class="tool-btn" data-mode="rotate">Rotate</button>
+      <button class="tool-btn" data-mode="scale">Scale</button>
     </div>
+    <button id="space-btn">World</button>
+    <button id="sidebar-toggle">Objects</button>
   </div>
 
   <script type="importmap">
@@ -154,22 +155,32 @@
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { TransformControls } from 'three/addons/controls/TransformControls.js';
 
-    // ─── Scene ───
-    const viewport = document.getElementById('viewport');
+    const viewportEl = document.getElementById('viewport');
+
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x1a1a2e);
 
-    const camera = new THREE.PerspectiveCamera(50, viewport.clientWidth / viewport.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(50, 2, 0.1, 1000);
     camera.position.set(8, 6, 8);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(viewport.clientWidth, viewport.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    viewport.appendChild(renderer.domElement);
+    viewportEl.appendChild(renderer.domElement);
 
-    // ─── Lighting ───
+    function onResize() {
+      const w = viewportEl.clientWidth;
+      const h = viewportEl.clientHeight;
+      if (w === 0 || h === 0) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    onResize();
+    const ro = new ResizeObserver(onResize);
+    ro.observe(viewportEl);
+
     scene.add(new THREE.AmbientLight(0xffffff, 0.5));
     const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     dirLight.position.set(8, 12, 8);
@@ -184,7 +195,6 @@
     scene.add(dirLight);
     scene.add(new THREE.HemisphereLight(0x8888ff, 0x444422, 0.3));
 
-    // ─── Ground ───
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(40, 40),
       new THREE.ShadowMaterial({ opacity: 0.3 })
@@ -194,53 +204,48 @@
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // ─── Gizmo (axis indicator in corner) ───
+    // ─── Axis Gizmo (overlay in bottom-right corner) ───
     const gizmoScene = new THREE.Scene();
     const gizmoCamera = new THREE.OrthographicCamera(-1.5, 1.5, 1.5, -1.5, 0.1, 10);
     gizmoCamera.position.set(0, 0, 3);
     gizmoScene.add(new THREE.AmbientLight(0xffffff, 1));
-
     const gizmoGroup = new THREE.Group();
     gizmoScene.add(gizmoGroup);
 
-    const gizmoLen = 1;
-    function makeAxis(color, dir) {
-      const mat = new THREE.LineBasicMaterial({ color, linewidth: 2 });
-      const pts = [new THREE.Vector3(0, 0, 0), dir.clone().multiplyScalar(gizmoLen)];
+    function makeAxisLine(color, dir) {
+      const pts = [new THREE.Vector3(), dir.clone()];
       const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      const line = new THREE.Line(geo, mat);
-      // endpoint sphere
-      const sph = new THREE.Mesh(
+      gizmoGroup.add(new THREE.Line(geo, new THREE.LineBasicMaterial({ color })));
+      const tip = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 8, 8),
         new THREE.MeshBasicMaterial({ color })
       );
-      sph.position.copy(dir).multiplyScalar(gizmoLen);
-      gizmoGroup.add(line, sph);
+      tip.position.copy(dir);
+      gizmoGroup.add(tip);
     }
-    makeAxis(0xe94560, new THREE.Vector3(1, 0, 0)); // X
-    makeAxis(0x4a7c59, new THREE.Vector3(0, 1, 0)); // Y
-    makeAxis(0x0f3460, new THREE.Vector3(0, 0, 1)); // Z
+    makeAxisLine(0xe94560, new THREE.Vector3(1, 0, 0));
+    makeAxisLine(0x4a7c59, new THREE.Vector3(0, 1, 0));
+    makeAxisLine(0x0f3460, new THREE.Vector3(0, 0, 1));
 
-    // Axis labels
-    function makeLabel(text, color, pos) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 64; canvas.height = 64;
-      const ctx = canvas.getContext('2d');
+    function makeGizmoLabel(text, color, pos) {
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 64;
+      const ctx = c.getContext('2d');
       ctx.fillStyle = color;
       ctx.font = 'bold 48px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(text, 32, 32);
-      const tex = new THREE.CanvasTexture(canvas);
-      const spriteMat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
-      const sprite = new THREE.Sprite(spriteMat);
-      sprite.position.copy(pos).multiplyScalar(1.3);
-      sprite.scale.set(0.4, 0.4, 0.4);
-      gizmoGroup.add(sprite);
+      const sp = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false })
+      );
+      sp.position.copy(pos).multiplyScalar(1.4);
+      sp.scale.set(0.4, 0.4, 0.4);
+      gizmoGroup.add(sp);
     }
-    makeLabel('X', '#e94560', new THREE.Vector3(1, 0, 0));
-    makeLabel('Y', '#4a7c59', new THREE.Vector3(0, 1, 0));
-    makeLabel('Z', '#0f3460', new THREE.Vector3(0, 0, 1));
+    makeGizmoLabel('X', '#e94560', new THREE.Vector3(1, 0, 0));
+    makeGizmoLabel('Y', '#4a7c59', new THREE.Vector3(0, 1, 0));
+    makeGizmoLabel('Z', '#0f3460', new THREE.Vector3(0, 0, 1));
 
     // ─── Controls ───
     const orbitControls = new OrbitControls(camera, renderer.domElement);
@@ -270,7 +275,6 @@
       plane:    { color: 0x4a7c59, width: 2, height: 2 },
     };
 
-    // ─── Geometry ───
     function buildGeometry(type, props) {
       switch (type) {
         case 'cube':     return new THREE.BoxGeometry(props.width, props.height, props.depth);
@@ -291,9 +295,7 @@
       );
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-
-      const name = `${type.charAt(0).toUpperCase() + type.slice(1)} ${++idCounter}`;
-      mesh.userData = { name, type, props };
+      mesh.userData = { name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${++idCounter}`, type, props };
 
       if (type === 'plane') { mesh.rotation.x = -Math.PI / 2; mesh.position.y = 0.01; }
       else { mesh.position.y = props.height ? props.height / 2 : props.radius || 0.5; }
@@ -305,12 +307,10 @@
     }
 
     function updateGeometry(mesh) {
-      const { type, props } = mesh.userData;
       mesh.geometry.dispose();
-      mesh.geometry = buildGeometry(type, props);
+      mesh.geometry = buildGeometry(mesh.userData.type, mesh.userData.props);
     }
 
-    // ─── Selection ───
     function selectObject(mesh) {
       selectedObject = mesh;
       transformControls.attach(mesh);
@@ -325,26 +325,6 @@
       updatePropsPanel();
     }
 
-    // ─── Object List ───
-    function refreshObjectList() {
-      const list = document.getElementById('object-list');
-      list.innerHTML = '';
-      for (const obj of objects) {
-        const item = document.createElement('div');
-        item.className = 'obj-item' + (obj === selectedObject ? ' selected' : '');
-        const label = document.createElement('span');
-        label.textContent = obj.userData.name;
-        const del = document.createElement('button');
-        del.className = 'delete-btn';
-        del.textContent = '\u00d7';
-        del.addEventListener('click', e => { e.stopPropagation(); removeObject(obj); });
-        item.appendChild(label);
-        item.appendChild(del);
-        item.addEventListener('click', () => selectObject(obj));
-        list.appendChild(item);
-      }
-    }
-
     function removeObject(mesh) {
       scene.remove(mesh);
       mesh.geometry.dispose();
@@ -354,7 +334,27 @@
       refreshObjectList();
     }
 
-    // ─── Properties ───
+    // ─── Object List ───
+    function refreshObjectList() {
+      const list = document.getElementById('object-list');
+      list.innerHTML = '';
+      for (const obj of objects) {
+        const item = document.createElement('div');
+        item.className = 'obj-item' + (obj === selectedObject ? ' selected' : '');
+        const lbl = document.createElement('span');
+        lbl.textContent = obj.userData.name;
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.textContent = '\u00d7';
+        del.addEventListener('click', e => { e.stopPropagation(); removeObject(obj); });
+        item.appendChild(lbl);
+        item.appendChild(del);
+        item.addEventListener('click', () => selectObject(obj));
+        list.appendChild(item);
+      }
+    }
+
+    // ─── Properties Panel ───
     function updatePropsPanel() {
       const noSel = document.getElementById('no-selection');
       const content = document.getElementById('props-content');
@@ -368,14 +368,14 @@
       const nameRow = document.createElement('div');
       nameRow.className = 'prop-row';
       nameRow.innerHTML = '<label>Name</label>';
-      const nameInput = document.createElement('input');
-      nameInput.type = 'text'; nameInput.value = name;
-      nameInput.style.cssText = 'width:100%;padding:4px 6px;background:#1a1a2e;border:1px solid #0f3460;color:#e0e0e0;border-radius:4px;font-size:12px;';
-      nameInput.addEventListener('input', () => { selectedObject.userData.name = nameInput.value; refreshObjectList(); });
-      nameRow.appendChild(nameInput);
+      const ni = document.createElement('input');
+      ni.type = 'text'; ni.value = name;
+      ni.style.cssText = 'width:100%;padding:4px 6px;background:#1a1a2e;border:1px solid #0f3460;color:#e0e0e0;border-radius:4px;font-size:12px;';
+      ni.addEventListener('input', () => { selectedObject.userData.name = ni.value; refreshObjectList(); });
+      nameRow.appendChild(ni);
       content.appendChild(nameRow);
 
-      // Type props
+      // Type-specific props
       for (const def of getPropertyDefs(type)) {
         const row = document.createElement('div');
         row.className = 'prop-row';
@@ -385,53 +385,52 @@
           rv.className = 'range-val';
           rv.innerHTML = `<span>${def.label}</span><span>${val}</span>`;
           row.appendChild(rv);
-          const input = document.createElement('input');
-          input.type = 'range'; input.min = def.min; input.max = def.max; input.step = 1; input.value = val;
-          input.addEventListener('input', () => {
-            const v = parseInt(input.value);
+          const inp = document.createElement('input');
+          inp.type = 'range'; inp.min = def.min; inp.max = def.max; inp.step = 1; inp.value = val;
+          inp.addEventListener('input', () => {
+            const v = parseInt(inp.value);
             props[def.key] = v;
             rv.querySelector('span:last-child').textContent = v;
             updateGeometry(selectedObject);
             if (def.affectsY) recenterY(selectedObject);
           });
-          row.appendChild(input);
+          row.appendChild(inp);
         } else {
           row.innerHTML = `<label>${def.label}</label>`;
-          const input = document.createElement('input');
-          input.type = 'number'; input.value = val; input.min = def.min; input.step = def.step || 0.1;
-          input.addEventListener('input', () => {
-            const v = parseFloat(input.value);
+          const inp = document.createElement('input');
+          inp.type = 'number'; inp.value = val; inp.min = def.min; inp.step = def.step || 0.1;
+          inp.addEventListener('input', () => {
+            const v = parseFloat(inp.value);
             if (isNaN(v) || v <= 0) return;
             props[def.key] = v;
             updateGeometry(selectedObject);
             if (def.affectsY) recenterY(selectedObject);
           });
-          row.appendChild(input);
+          row.appendChild(inp);
         }
         content.appendChild(row);
       }
 
       // Position
-      appendSection(content, 'Position', ['x', 'y', 'z'], selectedObject.position, v => v, v => v);
-
+      appendVec3(content, 'Position', selectedObject.position, v => v, v => v);
       // Rotation
-      appendSection(content, 'Rotation (deg)', ['x', 'y', 'z'], selectedObject.rotation,
+      appendVec3(content, 'Rotation (deg)', selectedObject.rotation,
         v => THREE.MathUtils.radToDeg(v).toFixed(1),
         v => THREE.MathUtils.degToRad(parseFloat(v) || 0));
     }
 
-    function appendSection(container, title, axes, target, displayFn, parseFn) {
-      const head = document.createElement('div');
-      head.innerHTML = `<h2 style="font-size:11px;color:#e94560;margin-top:6px;">${title}</h2>`;
-      container.appendChild(head);
-      for (const axis of axes) {
+    function appendVec3(container, title, target, displayFn, parseFn) {
+      const h = document.createElement('div');
+      h.innerHTML = `<h2 style="font-size:11px;color:#e94560;margin-top:6px;">${title}</h2>`;
+      container.appendChild(h);
+      for (const axis of ['x', 'y', 'z']) {
         const row = document.createElement('div');
         row.className = 'prop-row';
         row.innerHTML = `<label>${axis.toUpperCase()}</label>`;
-        const input = document.createElement('input');
-        input.type = 'number'; input.value = displayFn(target[axis]); input.step = 0.25;
-        input.addEventListener('input', () => { target[axis] = parseFn(input.value); });
-        row.appendChild(input);
+        const inp = document.createElement('input');
+        inp.type = 'number'; inp.value = displayFn(target[axis]); inp.step = 0.25;
+        inp.addEventListener('input', () => { target[axis] = parseFn(inp.value); });
+        row.appendChild(inp);
         container.appendChild(row);
       }
     }
@@ -477,12 +476,10 @@
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        transformMode = btn.dataset.mode;
-        transformControls.setMode(transformMode);
+        transformControls.setMode(btn.dataset.mode);
       });
     });
 
-    // Space toggle (World / Local)
     const spaceBtn = document.getElementById('space-btn');
     spaceBtn.addEventListener('click', () => {
       transformSpace = transformSpace === 'world' ? 'local' : 'world';
@@ -491,13 +488,10 @@
       spaceBtn.classList.toggle('local', transformSpace === 'local');
     });
 
-    // Mobile sidebar toggle
-    const sidebar = document.getElementById('sidebar');
     document.getElementById('sidebar-toggle').addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+      document.getElementById('sidebar').classList.toggle('open');
     });
 
-    // Select / deselect
     renderer.domElement.addEventListener('pointerdown', e => {
       if (transformControls.dragging) return;
       const rect = renderer.domElement.getBoundingClientRect();
@@ -509,7 +503,6 @@
       else deselectAll();
     });
 
-    // Keyboard
     window.addEventListener('keydown', e => {
       if (e.target.tagName === 'INPUT') return;
       switch (e.key.toLowerCase()) {
@@ -522,38 +515,33 @@
       }
     });
 
-    // Resize
-    const ro = new ResizeObserver(() => {
-      camera.aspect = viewport.clientWidth / viewport.clientHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(viewport.clientWidth, viewport.clientHeight);
-    });
-    ro.observe(viewport);
-
     // ─── Render Loop ───
-    (function animate() {
+    function animate() {
       requestAnimationFrame(animate);
       orbitControls.update();
 
-      // Render main scene
       renderer.render(scene, camera);
 
-      // Render gizmo in corner
-      const s = Math.min(viewport.clientWidth, viewport.clientHeight) * 0.18;
-      const gx = viewport.clientWidth - s - 10;
-      const gy = 10;
-      renderer.clearDepth();
-      renderer.setViewport(gx, gy, s, s);
-      renderer.setScissor(gx, gy, s, s);
-      renderer.setScissorTest(true);
+      const w = viewportEl.clientWidth;
+      const h = viewportEl.clientHeight;
+      if (w > 0 && h > 0) {
+        const size = Math.min(w, h) * 0.18;
+        const gx = w - size - 10;
+        const gy = 10;
 
-      // Sync gizmo rotation with main camera
-      gizmoGroup.quaternion.copy(camera.quaternion);
+        renderer.clearDepth();
+        renderer.setViewport(gx, gy, size, size);
+        renderer.setScissor(gx, gy, size, size);
+        renderer.setScissorTest(true);
 
-      renderer.render(gizmoScene, gizmoCamera);
-      renderer.setScissorTest(false);
-      renderer.setViewport(0, 0, viewport.clientWidth, viewport.clientHeight);
-    })();
+        gizmoGroup.quaternion.copy(camera.quaternion);
+        renderer.render(gizmoScene, gizmoCamera);
+
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, w, h);
+      }
+    }
+    animate();
   </script>
 </body>
 </html>
